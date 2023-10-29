@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: newbiebucketlol28292
+
+  TransformationGlueJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: crime-transformation1
+      Role: arn:aws:iam::739587482343:role/LabRole
+      GlueVersion: 4.0
+      NumberOfWorkers: 5
+      Timeout: 30
+      WorkerType: G.1X
+      Command:
+        Name: glueetl
+        ScriptLocation: s3://aws-glue-assets-739587482343-us-east-1/scripts/Street_final.py
+      DefaultArguments:
+        "--job-language": "python"
+      ExecutionProperty:
+        MaxConcurrentRuns: 1    
+
+  GlueWorkflow:
+    Type: AWS::Glue::Workflow
+    Properties:
+      Description: ETL Job
+      MaxConcurrentRuns: 1
+      Name: crime-workflow
+
+  GlueTriggertrans:
+    Type: AWS::Glue::Trigger
+    DependsOn:
+      - GlueWorkflow
+      - TransformationGlueJob
+    Properties:
+      Actions:
+        - JobName: !Ref TransformationGlueJob
+      Description: Triggers the transform Jobs
+      Name: gluetriggertrans
+      Type: ON_DEMAND
+      WorkflowName: crime-workflow    
+
+ 
